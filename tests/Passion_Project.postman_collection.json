@@ -1,0 +1,1383 @@
+{
+	"info": {
+		"_postman_id": "9a03339d-4bad-483b-b16c-499abd314fdf",
+		"name": "Passion_Project",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Passion_Project",
+			"item": [
+				{
+					"name": "Mentor_login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching session token of mentor",
+									"    var token= pm.response.json();",
+									"    pm.environment.set(\"Mentor_token\",token.Session_token)",
+									"",
+									"",
+									"//checking and matching status code:",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"//checking keys of response body",
+									"pm.test(\"Response body kyes match\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Email_ID\");",
+									"    pm.expect(pm.response.text()).to.include(\"Session_token\");",
+									"    pm.expect(pm.response.text()).to.include(\"coins\");",
+									"    pm.expect(pm.response.text()).to.include(\"first_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"last_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"role\");",
+									"    pm.expect(pm.response.text()).to.include(\"user_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"username\");",
+									"",
+									"});",
+									"",
+									"// role of the logged-in user",
+									"pm.test(\"is the user mentor \", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.role).to.eql(\"mentor\");",
+									"});",
+									"",
+									"//-----------------------",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"qa.mentor@gmail.com\",\"password\":\"abcdefG1\",\"provider\":\"\",\"access_token\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//login",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get_passion_project_list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetched all passion project list successfully",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"message\");",
+									"    pm.expect(pm.response.text()).to.include(\"projects\");",
+									"});",
+									"var schema = {",
+									"  \"items\": {",
+									"    \"type\": \"boolean\"",
+									"  }",
+									"};",
+									"",
+									"//----------------------------------------------------------------",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Mentor_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Passion_project_create",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"//Generating random value",
+									"var ran = Math.random().toString(36).substring(2);",
+									"var randomvalue = \"Random\" + ran;",
+									"pm.environment.set(\"project_name\",randomvalue)",
+									"",
+									"//Checking tags! are duplicate or not",
+									"",
+									"function checkIfArrayIsUnique(array) {",
+									"  return array.length === new Set(array).size;",
+									"}",
+									"",
+									"pm.test('Check, is tags are unique', () => {",
+									"    let ids = []",
+									"    _.each(JSON.parse(pm.request.body.raw).project_tags, (item) => {",
+									"        ids.push(item._id)",
+									"    })",
+									"",
+									"    pm.expect(checkIfArrayIsUnique(ids), ids).to.be.true",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									" //Checking project is created successfully or not",
+									"",
+									" pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"})",
+									"",
+									"//Checking response Keys",
+									"",
+									"pm.test(\"Response Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"message\");",
+									"});",
+									"",
+									"//Fetching passion project",
+									"var ppi=pm.response.json();",
+									"pm.environment.set(\"passion_project_id\",ppi._id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Mentor_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"project_title\":\"{{project_name}}\",\"project_description\":\"desc\",\"project_tags\":[{\"_id\":\"5ee50459d2b778a6061ad5ef\",\"tag\":\"Machine-Learning\"}],\"project_image\":\"passion-project-resources/1604049747-5f5f5a7dcf0fbfd9945fcd9d.png\",\"project_mentors\":[],\"project_resources\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"passion_projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Passion_project_edit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									" //Checking project is created successfully or not",
+									"",
+									" pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"})",
+									"",
+									"//Checking response Keys",
+									"",
+									"pm.test(\"Response Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Mentor_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"project_id\":\"{{passion_project_id}}\",\"project_title\":\"{{project_name}}\",\"project_description\":\"desc\",\"project_tags\":[{\"_id\":\"5ee50459d2b778a6061ad5ef\",\"tag\":\"Machine-Learning\"}],\"project_image\":\"https://educollab-data-qa.s3.amazonaws.com/passion-project-resources/1604049747-5f5f5a7dcf0fbfd9945fcd9d.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQ6VB3Z4MNQWVVY74%2F20201119%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20201119T113534Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEN%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCmFwLXNvdXRoLTEiRjBEAiA2UxdghRvMnZj45UqwyCJCcNep5PaJux5QCANxqnxX%2FAIgHV%2B4fXLq7NfYWux9PUtgHfRozH5t6VlNEFA0hAUTtCcqsAMIWBABGgwwNjU4Mzc3MTUyMjQiDMp3OAjF8DmYBWa79CqNAykuDGGeSTj1VL8pAxvjrECHBnL15mXVXcvJQb8am0SXrQQhentbk4YSVpdnN459%2BKgo9JBKfgSL0wdTuN9TM6EKHY%2FNL5uBiQhfq0vu2pEIMQBa%2B6D7oapjVjI20xJnPyAoeLU33P4iq%2Bf1EXRD7bT0UPFt2s48mkRb3odKrGQV0%2BFr9cvUFQVpUrjWmBZA5nvNg5wcCbWQ87c7nXEQeRwQGyN3vt01zqSoj6lUZYowx5TOxFwP5FTzs0fkJvjHhTBe5Y8BD2KJAoehJDPjf3JF5wlSUaiKkclm13zfVtrbcMNcPgcpmYm%2F8CyKuYm6nWh4Mz2kJCqZxwGzjvnkzQzW67BDosuoLH%2BQ1H%2BANAsEj7TOjoOFzIEGeypNSIZGooRYCBLP%2FyMmPv8BhLX0FqjUlb%2BwZVCgrOuOvHYdgsDkOFCFSxG8%2FEaitRrZ%2BVnr5VNRcGe1jG8rnUoUtNvsh8ZDoBEVFc5nt4Pa4O%2Ft8hDSH%2FjRF%2BHTuSzcgNxuTo29%2FheinFSY094CMLxb6vkwnqPY%2FQU67AEx090yKFELRmh%2Fl%2BNG2WXWNqe9Ex6Lw%2FzaKunbLLeY9HwlZ%2BSnT2e9Lifcd8rO4OAS%2BksHTR5h6Qz5RDL7KmLdA%2Bztd4n37ZRl2mWEcfj8zt6bxj9PnYxQmpBTPMqpnKRtyXm6IH%2FlOsfCs9xZTP2wuePy3xcAHH3f5YO0Xytcu%2BCSor5j5iMYnCEQtfWdd34B1QzqhbBKaErKSyeeXcqqDEetObf9vh8LGnnfGaFfFx8CkhODDO5xORGymHSzbFOzW5NFkn33Jd1z0AmdHwFS4ocEXCaj8o0QoEbAg0tWmGBj4psqscCm2TR0iQ%3D%3D&X-Amz-Signature=98be1b59c880f9bf15021bc44a4facbb0eac4f48a5bef6540e6dc9a86f75a097\",\"project_mentors\":[],\"project_resources\":[{\"title\":\"YouTube\",\"_id\":\"\",\"url\":\"https://www.youtube.com/\",\"type\":\"text\"},{\"title\":\"png image\",\"_id\":\"5fb65872fbe9ab0286ffc09e\",\"url\":\"\",\"type\":\"file\"}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Student_Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching session token of mentor",
+									"    var token= pm.response.json();",
+									"    pm.environment.set(\"Student_token\",token.Session_token);",
+									"",
+									"",
+									"//checking and matching status code:",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"//checking keys of response body",
+									"pm.test(\"Response body kyes match\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Email_ID\");",
+									"    pm.expect(pm.response.text()).to.include(\"Session_token\");",
+									"    pm.expect(pm.response.text()).to.include(\"coins\");",
+									"    pm.expect(pm.response.text()).to.include(\"first_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"last_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"role\");",
+									"    pm.expect(pm.response.text()).to.include(\"user_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"username\");",
+									"",
+									"});",
+									"",
+									"// role of the logged-in user",
+									"pm.test(\"is the user mentor \", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.role).to.eql(\"student\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"vinay.1@gmail.com\",\"password\":\"Ashu@987\",\"provider\":\"\",\"access_token\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//login",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create_Team",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Generate random string and set in team name, so it can be unique.",
+									"",
+									"function randomvalue(val){",
+									"let r = Math.random().toString(36).substring(7);",
+									"return r;",
+									"}",
+									"pm.environment.set(\"passion_project_team\",randomvalue());",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"message\");",
+									"});",
+									"",
+									"//Fetching Team-id",
+									"var team_id=pm.response.json();",
+									"pm.environment.set(\"Passion_project_team_id\",team_id._id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"team_name\":\"{{passion_project_team}}\",\"team_logo\":\"passion-project-resources/1604295933-5ef1b5b672eff9f693fe147f.png\",\"project_id\":[\"{{passion_project_id}}\"],\"team_members\":[\"5f06db7bc2d1882e53e219c8\",\"5f06dbadc2d1882e53e219c9\",\"5ef1b5b672eff9f693fe147f\"]}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects/team",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"team"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit_Team",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"team_id\":\"{{Passion_project_team_id}}\",\"team_name\":\"{{passion_project_team}}\",\"team_logo\":\"https://educollab-data-qa.s3.amazonaws.com/passion-project-resources/1604295933-5ef1b5b672eff9f693fe147f.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQ6VB3Z4MNQWVVY74%2F20201119%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20201119T112120Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEN%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCmFwLXNvdXRoLTEiRjBEAiA2UxdghRvMnZj45UqwyCJCcNep5PaJux5QCANxqnxX%2FAIgHV%2B4fXLq7NfYWux9PUtgHfRozH5t6VlNEFA0hAUTtCcqsAMIWBABGgwwNjU4Mzc3MTUyMjQiDMp3OAjF8DmYBWa79CqNAykuDGGeSTj1VL8pAxvjrECHBnL15mXVXcvJQb8am0SXrQQhentbk4YSVpdnN459%2BKgo9JBKfgSL0wdTuN9TM6EKHY%2FNL5uBiQhfq0vu2pEIMQBa%2B6D7oapjVjI20xJnPyAoeLU33P4iq%2Bf1EXRD7bT0UPFt2s48mkRb3odKrGQV0%2BFr9cvUFQVpUrjWmBZA5nvNg5wcCbWQ87c7nXEQeRwQGyN3vt01zqSoj6lUZYowx5TOxFwP5FTzs0fkJvjHhTBe5Y8BD2KJAoehJDPjf3JF5wlSUaiKkclm13zfVtrbcMNcPgcpmYm%2F8CyKuYm6nWh4Mz2kJCqZxwGzjvnkzQzW67BDosuoLH%2BQ1H%2BANAsEj7TOjoOFzIEGeypNSIZGooRYCBLP%2FyMmPv8BhLX0FqjUlb%2BwZVCgrOuOvHYdgsDkOFCFSxG8%2FEaitRrZ%2BVnr5VNRcGe1jG8rnUoUtNvsh8ZDoBEVFc5nt4Pa4O%2Ft8hDSH%2FjRF%2BHTuSzcgNxuTo29%2FheinFSY094CMLxb6vkwnqPY%2FQU67AEx090yKFELRmh%2Fl%2BNG2WXWNqe9Ex6Lw%2FzaKunbLLeY9HwlZ%2BSnT2e9Lifcd8rO4OAS%2BksHTR5h6Qz5RDL7KmLdA%2Bztd4n37ZRl2mWEcfj8zt6bxj9PnYxQmpBTPMqpnKRtyXm6IH%2FlOsfCs9xZTP2wuePy3xcAHH3f5YO0Xytcu%2BCSor5j5iMYnCEQtfWdd34B1QzqhbBKaErKSyeeXcqqDEetObf9vh8LGnnfGaFfFx8CkhODDO5xORGymHSzbFOzW5NFkn33Jd1z0AmdHwFS4ocEXCaj8o0QoEbAg0tWmGBj4psqscCm2TR0iQ%3D%3D&X-Amz-Signature=87fcc620975caabf2c5d9c225959827bede7b65fb5ca5079d996ccd03e0cf4f3\",\"project_id\":[\"{{passion_project_id}}\"],\"team_members\":[\"5f06db7bc2d1882e53e219c8\",\"5ef1b5b672eff9f693fe147f\",\"5f06dbadc2d1882e53e219c9\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects/team",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"team"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add_Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching Report-id",
+									"var report_id=pm.response.json();",
+									"pm.environment.set(\"Report_id\",report_id._id);",
+									"",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"project_id\":\"{{passion_project_id}}\",\"team_id\":\"{{Passion_project_team_id}}\",\"title\":\"This is report\",\"content\":\"<!DOCTYPE html>\\n<html>\\n<head>\\n</head>\\n<body>\\n<p> any text </p>\\n</body>\\n</html>\",\"tags\":[{\"_id\":\"5ee4df8cdaae271b48a114fc\",\"tag\":\"English\"}],\"code_links\":[],\"resource_links\":[],\"webinar_links\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects/report",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add_second_Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"",
+									"pm.test(\"more then one report not permitted\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"You cannot add more than one report for project. Try editing the report.\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "session-token",
+								"type": "text",
+								"value": "{{Student_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"project_id\":\"{{passion_project_id}}\",\"team_id\":\"{{Passion_project_team_id}}\",\"title\":\"This is report\",\"content\":\"<!DOCTYPE html>\\n<html>\\n<head>\\n</head>\\n<body>\\n<p> any text </p>\\n</body>\\n</html>\",\"tags\":[{\"_id\":\"5ee4df8cdaae271b48a114fc\",\"tag\":\"English\"}],\"code_links\":[],\"resource_links\":[],\"webinar_links\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects/report",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "view_report_mentor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-token",
+								"type": "text",
+								"value": "{{Mentor_token}}"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report?project_id={{passion_project_id-2}}&team_id={{Passion_project_team_id}}",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{passion_project_id-2}}"
+								},
+								{
+									"key": "team_id",
+									"value": "{{Passion_project_team_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit_Report_student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"_id\":\"{{Report_id}}\",\"project_id\":\"{{passion_project_id}}\",\"team_id\":\"{{Passion_project_team_id}}\",\"title\":\"This is editted report\",\"content\":\"<!DOCTYPE html>\\n\\n<html>\\n<head>\\n</head>\\n<body>\\n<div style='display: none;'>&nbsp;</div>\\n<p>any text</p>\\n</body>\\n</html>\",\"tags\":[{\"_id\":\"5ee4df8cdaae271b48a114fc\",\"tag\":\"English\"}],\"code_links\":[],\"resource_links\":[],\"webinar_links\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "view_report_student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report?project_id={{passion_project_id-2}}&team_id={{Passion_project_team_id}}",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{passion_project_id-2}}"
+								},
+								{
+									"key": "team_id",
+									"value": "{{Passion_project_team_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Student_login-2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching session token of mentor",
+									"    var token= pm.response.json();",
+									"    pm.environment.set(\"Student_token-2\",token.Session_token);",
+									"",
+									"",
+									"//checking and matching status code:",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"//checking keys of response body",
+									"pm.test(\"Response body kyes match\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Email_ID\");",
+									"    pm.expect(pm.response.text()).to.include(\"Session_token\");",
+									"    pm.expect(pm.response.text()).to.include(\"coins\");",
+									"    pm.expect(pm.response.text()).to.include(\"first_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"last_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"role\");",
+									"    pm.expect(pm.response.text()).to.include(\"user_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"username\");",
+									"",
+									"});",
+									"",
+									"// role of the logged-in user",
+									"pm.test(\"is the user student \", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.role).to.eql(\"student\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"vinay.t.2@tatrasdata.com\",\"password\":\"Ashu@9090\",\"provider\":\"\",\"access_token\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//login",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Edit_Report_Student-2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token-2}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"_id\":\"{{Report_id}}\",\"project_id\":\"{{passion_project_id}}\",\"team_id\":\"{{Passion_project_team_id}}\",\"title\":\"This is editted report\",\"content\":\"<!DOCTYPE html>\\n\\n<html>\\n<head>\\n</head>\\n<body>\\n<div style='display: none;'>&nbsp;</div>\\n<p>any text</p>\\n</body>\\n</html>\",\"tags\":[{\"_id\":\"5ee4df8cdaae271b48a114fc\",\"tag\":\"English\"}],\"code_links\":[],\"resource_links\":[],\"webinar_links\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "view_report_student-2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-token",
+								"value": "{{Student_token-2}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report?project_id={{passion_project_id-2}}&team_id={{Passion_project_team_id}}",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{passion_project_id-2}}"
+								},
+								{
+									"key": "team_id",
+									"value": "{{Passion_project_team_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Passion_project_create_new",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									" //Checking project is created successfully or not",
+									"",
+									" pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"})",
+									"",
+									"//Checking response Keys",
+									"",
+									"pm.test(\"Response Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"message\");",
+									"});",
+									"",
+									"//Fetching passion project",
+									"var ppi=pm.response.json();",
+									"pm.environment.set(\"passion_project_id-2\",ppi._id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"//Generating random value",
+									"var ran = Math.random().toString(36).substring(2);",
+									"var randomvalue = \"Random\" + ran;",
+									"pm.environment.set(\"project_name\",randomvalue)",
+									"",
+									"//Checking tags! are duplicate or not",
+									"",
+									"function checkIfArrayIsUnique(array) {",
+									"  return array.length === new Set(array).size;",
+									"}",
+									"",
+									"pm.test('Check, is tags are unique', () => {",
+									"    let ids = []",
+									"    _.each(JSON.parse(pm.request.body.raw).project_tags, (item) => {",
+									"        ids.push(item._id)",
+									"    })",
+									"",
+									"    pm.expect(checkIfArrayIsUnique(ids), ids).to.be.true",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Mentor_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"project_title\":\"{{project_name}}\",\"project_description\":\"desc\",\"project_tags\":[{\"_id\":\"5ee50459d2b778a6061ad5ef\",\"tag\":\"Machine-Learning\"}],\"project_image\":\"passion-project-resources/1604049747-5f5f5a7dcf0fbfd9945fcd9d.png\",\"project_mentors\":[],\"project_resources\":[]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"passion_projects"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add_Existing_Team",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body matches string\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"success\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "session-token",
+								"value": "{{Student_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"team_id\":\"{{Passion_project_team_id}}\",\"project_id\":[\"{{passion_project_id-2}}\",\"{{passion_project_id}}\"],\"team_name\":\"{{passion_project_team}}\",\"team_logo\":\"https://educollab-data-qa.s3.amazonaws.com/passion-project-resources/1604295933-5ef1b5b672eff9f693fe147f.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIAQ6VB3Z4MNQWVVY74%2F20201119%2Fap-south-1%2Fs3%2Faws4_request&X-Amz-Date=20201119T091713Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEN%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCmFwLXNvdXRoLTEiRjBEAiA2UxdghRvMnZj45UqwyCJCcNep5PaJux5QCANxqnxX%2FAIgHV%2B4fXLq7NfYWux9PUtgHfRozH5t6VlNEFA0hAUTtCcqsAMIWBABGgwwNjU4Mzc3MTUyMjQiDMp3OAjF8DmYBWa79CqNAykuDGGeSTj1VL8pAxvjrECHBnL15mXVXcvJQb8am0SXrQQhentbk4YSVpdnN459%2BKgo9JBKfgSL0wdTuN9TM6EKHY%2FNL5uBiQhfq0vu2pEIMQBa%2B6D7oapjVjI20xJnPyAoeLU33P4iq%2Bf1EXRD7bT0UPFt2s48mkRb3odKrGQV0%2BFr9cvUFQVpUrjWmBZA5nvNg5wcCbWQ87c7nXEQeRwQGyN3vt01zqSoj6lUZYowx5TOxFwP5FTzs0fkJvjHhTBe5Y8BD2KJAoehJDPjf3JF5wlSUaiKkclm13zfVtrbcMNcPgcpmYm%2F8CyKuYm6nWh4Mz2kJCqZxwGzjvnkzQzW67BDosuoLH%2BQ1H%2BANAsEj7TOjoOFzIEGeypNSIZGooRYCBLP%2FyMmPv8BhLX0FqjUlb%2BwZVCgrOuOvHYdgsDkOFCFSxG8%2FEaitRrZ%2BVnr5VNRcGe1jG8rnUoUtNvsh8ZDoBEVFc5nt4Pa4O%2Ft8hDSH%2FjRF%2BHTuSzcgNxuTo29%2FheinFSY094CMLxb6vkwnqPY%2FQU67AEx090yKFELRmh%2Fl%2BNG2WXWNqe9Ex6Lw%2FzaKunbLLeY9HwlZ%2BSnT2e9Lifcd8rO4OAS%2BksHTR5h6Qz5RDL7KmLdA%2Bztd4n37ZRl2mWEcfj8zt6bxj9PnYxQmpBTPMqpnKRtyXm6IH%2FlOsfCs9xZTP2wuePy3xcAHH3f5YO0Xytcu%2BCSor5j5iMYnCEQtfWdd34B1QzqhbBKaErKSyeeXcqqDEetObf9vh8LGnnfGaFfFx8CkhODDO5xORGymHSzbFOzW5NFkn33Jd1z0AmdHwFS4ocEXCaj8o0QoEbAg0tWmGBj4psqscCm2TR0iQ%3D%3D&X-Amz-Signature=e44d19761db76482c46aa2ce37db612f7c48a99a7e48255b76d7a5342753d604\",\"team_members\":[\"5f06db7bc2d1882e53e219c8\",\"5f06dbadc2d1882e53e219c9\",\"5ef1b5b672eff9f693fe147f\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//passion_projects/team",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"team"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mentor_login-2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching session token of mentor",
+									"    var token= pm.response.json();",
+									"    pm.environment.set(\"Mentor_token\",token.Session_token)",
+									"",
+									"",
+									"//checking and matching status code:",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"//checking keys of response body",
+									"pm.test(\"Response body kyes match\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Email_ID\");",
+									"    pm.expect(pm.response.text()).to.include(\"Session_token\");",
+									"    pm.expect(pm.response.text()).to.include(\"coins\");",
+									"    pm.expect(pm.response.text()).to.include(\"first_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"last_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"role\");",
+									"    pm.expect(pm.response.text()).to.include(\"user_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"username\");",
+									"",
+									"});",
+									"",
+									"// role of the logged-in user",
+									"pm.test(\"is the user mentor \", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.role).to.eql(\"mentor\");",
+									"});",
+									"",
+									"//-----------------------",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"qa.mentor@gmail.com\",\"password\":\"abcdefG1\",\"provider\":\"\",\"access_token\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//login",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "view_report_mentor-2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Report is not accessible by another mentor/student\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-token",
+								"type": "text",
+								"value": "{{Mentor_token-2}}"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report?project_id={{passion_project_id-2}}&team_id={{Passion_project_team_id}}",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{passion_project_id-2}}"
+								},
+								{
+									"key": "team_id",
+									"value": "{{Passion_project_team_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Student_Login-3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"//Fetching session token of mentor",
+									"    var token= pm.response.json();",
+									"    pm.environment.set(\"Student_token-3\",token.Session_token);",
+									"",
+									"",
+									"//checking and matching status code:",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"//checking keys of response body",
+									"pm.test(\"Response body kyes match\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"Email_ID\");",
+									"    pm.expect(pm.response.text()).to.include(\"Session_token\");",
+									"    pm.expect(pm.response.text()).to.include(\"coins\");",
+									"    pm.expect(pm.response.text()).to.include(\"first_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"last_name\");",
+									"    pm.expect(pm.response.text()).to.include(\"permissions\");",
+									"    pm.expect(pm.response.text()).to.include(\"role\");",
+									"    pm.expect(pm.response.text()).to.include(\"user_id\");",
+									"    pm.expect(pm.response.text()).to.include(\"username\");",
+									"",
+									"});",
+									"",
+									"// role of the logged-in user",
+									"pm.test(\"is the user mentor \", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.role).to.eql(\"student\");",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"username\":\"jack@mail.com\",\"password\":\"abcdefG1\",\"provider\":\"\",\"access_token\":\"\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://qa.api.edu-collab.com//login",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "view_report_student-3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Report is not accessible by another mentor/student\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Session-token",
+								"type": "text",
+								"value": "{{Student_token-3}}"
+							}
+						],
+						"url": {
+							"raw": "https://qa.api.edu-collab.com/passion_projects/report?project_id={{passion_project_id-2}}&team_id={{Passion_project_team_id}}",
+							"protocol": "https",
+							"host": [
+								"qa",
+								"api",
+								"edu-collab",
+								"com"
+							],
+							"path": [
+								"",
+								"passion_projects",
+								"report"
+							],
+							"query": [
+								{
+									"key": "project_id",
+									"value": "{{passion_project_id-2}}"
+								},
+								{
+									"key": "team_id",
+									"value": "{{Passion_project_team_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

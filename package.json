@@ -1,0 +1,27 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "reportToSlack.js",
+  "scripts": {
+    "test": "node ./reportToSlack.js",
+    "serve:reports": "npm run http-server && npm run public:url",
+    "http-server": "http-server ./reports",
+    "public:url": "ngrok port 8080"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.422.0",
+    "httpclient": "^0.1.0",
+    "moment": "^2.24.0",
+    "newman": "^4.4.0",
+    "newman-reporter-html": "^1.0.2",
+    "newman-reporter-htmlextra": "^1.6.6",
+    "rimraf": "^2.6.3",
+    "slack-webhook": "^1.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^6.2.0"
+  }
+}

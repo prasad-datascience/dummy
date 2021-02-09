@@ -1,0 +1,157 @@
+version: 2
+jobs:
+
+  deploy:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/repo
+    environment:
+        DOCKER_VERSION: "17.05.0-ce"
+        TERRAFORM_VERSION: "0.13.2"
+        TERM: "xterm"
+        CICD_REPO: "tatras.devops.cicd"
+        TF_APP: "newman-ecs"
+        REPOSITORY_NAME: "newman-automation"
+        REPOSITORY_PATH: "065837715224.dkr.ecr.ap-south-1.amazonaws.com/"
+    steps:
+        - checkout
+
+        - run:
+            name: Write env vars to tmp, circleci workaround
+            command: |
+              echo "DOCKER_VERSION" > _tmp_docker_version
+              echo "TERRAFORM_VERSION" > _tmp_terraform_version
+              echo "credentials \"app.terraform.io\" { token = \"$ATLAS_TOKEN\" }" > ~/.terraformrc
+        - restore_cache:
+            keys:
+              - cache-{{ checksum "_tmp_docker_version" }}-{{ checksum "_tmp_terraform_version" }}
+
+
+        - run:
+            name: Download and install pip3 and awscli
+            command: |
+              curl "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip" -o "awscli-bundle.zip"
+              unzip awscli-bundle.zip
+              sudo ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+        - run:
+            name: Install Docker client if new version
+            command: |
+              if [[ ! -e ~/.bin/docker || $(docker version | grep Version | awk '{ print $2 }' | head -n 1) != "${DOCKER_VERSION}" ]]; then
+                set -x
+                curl --insecure -L -o "/tmp/docker-${DOCKER_VERSION}.tgz" "https://get.docker.com/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz"
+                tar -xz -C /tmp -f "/tmp/docker-${DOCKER_VERSION}.tgz"
+                mkdir -p ~/.bin/ && rm -rf ~/.bin/completion && mv -f /tmp/docker/* ~/.bin
+              fi
+        - run:
+            name: Install terraform
+            command: |
+              # download latest terraform if not in cache.
+              if [[ ! -e .bin/terraform || $(.bin/terraform version) != "Terraform v${TERRAFORM_VERSION}" ]]; then
+                terraformZip=terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                curl -sO "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${terraformZip}"
+                if [ $? -ne 0 ]; then
+                echo "Error downloading Terraform"
+                exit 1
+                fi
+                command -v unzip > /dev/null
+                has_unzip=$?
+                if [ ${has_unzip} -ne 0 ]; then
+                  apt-get update -y
+                  apt-get install -y unzip
+                fi
+                unzip -o "${terraformZip}" -d .bin/ > /dev/null
+                if [ $? -ne 0 ]; then
+                echo "Error downloading Terraform"
+                exit 1
+                fi
+              fi
+# prepare for newly installed packages that end up in ~/.bin
+        - run:
+            name: Add ~/.bin to $PATH
+            command: |
+              mkdir -p ~/.bin
+              echo 'export PATH=${PATH}:${HOME}/.bin' >> $BASH_ENV
+              echo 'export TERM="$TERM"' >> $BASH_ENV
+        - setup_remote_docker
+
+        - run:
+            name: Build
+            command: |
+              if [ "$CIRCLE_BRANCH" = 'master' ]; then
+                sed -i 's/PostmanEnvironment.postman_environment.json/prod.json/g' reportToSlack.js
+              elif [ "$CIRCLE_BRANCH" = 'qa' ]; then
+                sed -i 's/'
+              elif [ "$CIRCLE_BRANCH" = 'development' ]; then
+                sed 
+              else
+                echo "This branch is not linked an an environment. Skipping build"
+                exit 0
+              fi
+              # Check for this githash in ECR
+              set +e
+              aws ecr list-images --region ap-south-1 --repository-name "$REPOSITORY_NAME" --max-items 5000 | grep "$CIRCLE_SHA1"
+              image_exists=$?
+              set -e
+              if [[ ${image_exists} -eq 1 ]]; then
+                echo "AWS_ACESS_KEY=$AWS_ACCESS_KEY_ID" >> .env
+                echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> .env
+                echo "SLACK_WEBHOOK_KEY=$SLACK_WEBHOOK_KEY" >> .env
+                repo_path="${REPOSITORY_PATH}${REPOSITORY_NAME}"
+                aws ecr get-login --no-include-email | /bin/bash
+                docker build -t "${repo_path}:${CIRCLE_SHA1}" .
+                docker push "${repo_path}:${CIRCLE_SHA1}"
+              else
+                echo "This image already exists in ECR! Skipping docker build & push."
+              fi
+        - save_cache:
+            key: cache-{{ checksum "_tmp_docker_version" }}-{{ checksum "_tmp_terraform_version" }}
+            paths:
+              - "~/.bin"
+
+        # clone devops.cicd.dashboard from github
+        - run:
+            name: Download cicd repo
+            command: |
+              git clone "https://github.com/TSG-Research/${CICD_REPO}" .ci
+              #cd .ci && git fetch --tags && git checkout "tags/${CICD_VERSION}" -b deploy
+        # deploy container
+        - run:
+            name: Container Deploy
+            command: |
+              cd .ci
+              if [ "$CIRCLE_BRANCH" = 'stage' ]; then
+                DEPLOY_ENV=stage
+              elif [ "$CIRCLE_BRANCH" = 'master' ]; then
+                DEPLOY_ENV=prod
+              elif [ "$CIRCLE_BRANCH" = 'qa' ]; then
+                DEPLOY_ENV=qa
+              elif [ "$CIRCLE_BRANCH" = 'development' ]; then
+                DEPLOY_ENV=dev
+              else
+                echo "This branch is not linked an an environment. Skipping deploy"
+                exit 0
+              fi
+              # TODO: Circle back here to resolve tagging issues
+              # (cd ../ && ./push_tag.sh "$CIRCLE_SHA1" "$DEPLOY_ENV" "$REPOSITORY_NAME")
+              # Change into dashboard TF project
+              cd $TF_APP
+              echo "DEPLOY_ENV: $DEPLOY_ENV"
+              vartag=$'\nvariable "container_tag" {\n  default = "'$CIRCLE_SHA1$'"\n}'
+              echo "$vartag" >> ./variables.tf
+              # Download appropriate vars file
+              echo 1 | ../../.bin/terraform init
+              # ../../.bin/terraform workspace select "$DEPLOY_ENV"
+              ../../.bin/terraform apply -auto-approve #-var "container_tag=$CIRCLE_SHA1"
+              sh ecs-deploy-task.sh
+workflows:
+  version: 2
+  build_and_deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only:
+                - development
+                - stage
+                - master
+                - qa
